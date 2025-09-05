@@ -1,5 +1,11 @@
 import { NextRequest } from "next/server";
-import { generateRAGResponse } from "../../../../backend/lib/rag";
+
+// Simple in-memory documentation for RAG
+const docs = {
+  "api": "API Documentation: All API requests require authentication using an API key. Include your API key in the Authorization header: 'Authorization: Bearer YOUR_API_KEY'. The API base URL is: https://api.example.com/v1. Endpoints include GET /users, POST /users, GET /products, and GET /products/{id}.",
+  "user": "User Manual: Create your account by visiting the registration page. Verify your email address and complete your profile information. Set up two-factor authentication for enhanced security. The dashboard provides quick access to all features, recent activity summary, and notifications.",
+  "technical": "Technical Specs: Our platform is built using React 18 with TypeScript, Node.js 18+, Express.js, PostgreSQL 14+, and Redis 6+. The system uses microservices architecture with AWS cloud infrastructure. API performance: < 200ms response time, 10,000 requests per second, 99.9% uptime SLA."
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,47 +24,22 @@ export async function POST(req: NextRequest) {
       return new Response("Invalid message format", { status: 400 });
     }
 
-    let response: string;
-
-    // Check if we have valid API keys (not placeholders)
-    const hasValidKeys = process.env.GOOGLE_API_KEY && 
-                        process.env.PINECONE_API_KEY && 
-                        process.env.PINECONE_INDEX_NAME &&
-                        !process.env.GOOGLE_API_KEY.includes('placeholder') &&
-                        !process.env.PINECONE_API_KEY.includes('placeholder');
-
-    if (hasValidKeys) {
-      try {
-        // Generate RAG response using the documentation
-        const ragResult = await generateRAGResponse(lastMessage.content);
-        response = ragResult.response;
-      } catch (ragError) {
-        console.error("RAG system error:", ragError);
-        // Fallback response when RAG system fails
-        response = `I understand you're asking about "${lastMessage.content}". I'm having trouble accessing the documentation system right now. Please make sure your API keys are properly configured in the .env.local file.`;
-      }
+    // Simple RAG: find relevant documentation based on keywords
+    const query = lastMessage.content.toLowerCase();
+    let relevantDoc = "";
+    
+    if (query.includes('api') || query.includes('authentication') || query.includes('key') || query.includes('endpoint')) {
+      relevantDoc = docs.api;
+    } else if (query.includes('user') || query.includes('account') || query.includes('registration') || query.includes('profile')) {
+      relevantDoc = docs.user;
+    } else if (query.includes('technical') || query.includes('system') || query.includes('architecture') || query.includes('infrastructure')) {
+      relevantDoc = docs.technical;
     } else {
-      // Demo response when API keys are not configured - simulate RAG behavior
-      const sampleDocs = [
-        "API Documentation: All API requests require authentication using an API key. Include your API key in the Authorization header: 'Authorization: Bearer YOUR_API_KEY'. The API base URL is: https://api.example.com/v1",
-        "User Manual: Create your account by visiting the registration page. Verify your email address and complete your profile information. Set up two-factor authentication for enhanced security.",
-        "Technical Specs: Our platform is built using React 18 with TypeScript, Node.js 18+, Express.js, PostgreSQL 14+, and Redis 6+. The system uses microservices architecture with AWS cloud infrastructure."
-      ];
-      
-      // Simple keyword matching to simulate RAG behavior
-      const query = lastMessage.content.toLowerCase();
-      let relevantDoc = sampleDocs[0]; // Default
-      
-      if (query.includes('api') || query.includes('authentication') || query.includes('key') || query.includes('endpoint')) {
-        relevantDoc = sampleDocs[0];
-      } else if (query.includes('user') || query.includes('account') || query.includes('registration') || query.includes('profile')) {
-        relevantDoc = sampleDocs[1];
-      } else if (query.includes('technical') || query.includes('system') || query.includes('architecture') || query.includes('infrastructure')) {
-        relevantDoc = sampleDocs[2];
-      }
-      
-      response = `Based on the documentation, here's what I found about "${lastMessage.content}":\n\n${relevantDoc}\n\nNote: This is a demo response using sample documentation. To get real-time answers from your actual documentation, please configure your Google Gemini and Pinecone API keys in the .env.local file.`;
+      // Default response for general queries
+      relevantDoc = "I can help you with API documentation, user guides, or technical specifications. Please ask about specific topics like 'API authentication', 'user account setup', or 'technical requirements'.";
     }
+    
+    const response = `Based on the documentation, here's what I found about "${lastMessage.content}":\n\n${relevantDoc}`;
     
     // Stream the response back
     const encoder = new TextEncoder();

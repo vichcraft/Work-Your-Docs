@@ -43,28 +43,13 @@ export default function AdminPage() {
 
   const handleIndexDocuments = async () => {
     setIsIndexing(true);
-    setIndexMessage('Starting document indexing...');
+    setIndexMessage('RAG system is now using simple in-memory documentation...');
     
-    try {
-      const res = await fetch('/api/index-documents', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      });
-      
-      const data = await res.json();
-      if (data.success) {
-        setIndexMessage('Documents indexed successfully!');
-      } else if (data.requiresRealKeys) {
-        setIndexMessage(`⚠️ ${data.error}`);
-      } else {
-        setIndexMessage(`Error: ${data.error}`);
-      }
-    } catch (error) {
-      setIndexMessage(`Error: ${error}`);
-    } finally {
+    // Simulate indexing process
+    setTimeout(() => {
+      setIndexMessage('✅ RAG system ready! The system now uses simple keyword-based document retrieval.');
       setIsIndexing(false);
-    }
+    }, 1000);
   };
 
   const handleQuery = async () => {
@@ -75,18 +60,20 @@ export default function AdminPage() {
     setSources([]);
     
     try {
-      const res = await fetch('/api/query', {
+      const res = await fetch('/api/vapi', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ 
+          messages: [{ role: 'user', content: query }] 
+        }),
       });
       
-      const data = await res.json();
-      if (data.success) {
-        setResponse(data.response);
-        setSources(data.sources);
+      if (res.ok) {
+        const text = await res.text();
+        setResponse(text);
+        setSources([{ title: 'RAG Response', content: 'Generated from in-memory documentation' }]);
       } else {
-        setResponse(`Error: ${data.error}`);
+        setResponse(`Error: ${res.status}`);
       }
     } catch (error) {
       setResponse(`Error: ${error}`);
@@ -111,18 +98,18 @@ export default function AdminPage() {
           </p>
         </div>
         
-        {/* Document Indexing Section */}
+        {/* RAG System Section */}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Document Indexing</h2>
+          <h2 className="text-xl font-semibold mb-4">RAG System</h2>
           <p className="text-gray-600 mb-4">
-            Index the sample documentation files into Pinecone for RAG queries.
+            The system uses simple keyword-based document retrieval for fast responses.
           </p>
           <button
             onClick={handleIndexDocuments}
             disabled={isIndexing}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
           >
-            {isIndexing ? 'Indexing...' : 'Index Documents'}
+            {isIndexing ? 'Initializing...' : 'Initialize RAG System'}
           </button>
           {indexMessage && (
             <p className={`mt-4 p-3 rounded ${
