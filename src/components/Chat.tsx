@@ -46,7 +46,7 @@ export default function Chat() {
   // Initialize Vapi
   useEffect(() => {
     const publicKey = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
-    if (publicKey) {
+    if (publicKey && !publicKey.includes('placeholder')) {
       vapiRef.current = new Vapi(publicKey);
       
       // Set up event listeners
@@ -108,6 +108,7 @@ export default function Chat() {
   }, [messages, assistantTyping]);
 
   const canSend = input.trim().length > 0 && !sending;
+  const isVapiConfigured = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY && !process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY.includes('placeholder');
 
   async function handleSend(text?: string) {
     const content = (text ?? input).trim();
@@ -183,7 +184,14 @@ export default function Chat() {
   // Handle voice calls with Vapi
   async function handleMic() {
     if (!vapiRef.current) {
-      alert("Vapi is not configured. Please add your NEXT_PUBLIC_VAPI_PUBLIC_KEY to your environment variables.");
+      const publicKey = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
+      if (!publicKey) {
+        alert("Vapi is not configured. Please add your NEXT_PUBLIC_VAPI_PUBLIC_KEY to your environment variables.");
+      } else if (publicKey.includes('placeholder')) {
+        alert("Vapi is configured with placeholder values. Please replace the placeholder values in .env.local with your actual VAPI public key.");
+      } else {
+        alert("Vapi failed to initialize. Please check your configuration.");
+      }
       return;
     }
 
@@ -323,16 +331,26 @@ export default function Chat() {
           <button
             type="button"
             onClick={handleMic}
-            disabled={isConnecting}
+            disabled={isConnecting || !isVapiConfigured}
             className={[
               "shrink-0 grid place-items-center rounded-xl border p-2 transition-all",
-              isCallActive 
-                ? "bg-red-500/20 border-red-400/30 hover:bg-red-500/30 text-red-300"
-                : isConnecting
-                  ? "bg-yellow-500/20 border-yellow-400/30 text-yellow-300 cursor-not-allowed"
-                  : "border-white/10 bg-white/5 hover:bg-white/10 text-white/70"
+              !isVapiConfigured
+                ? "bg-gray-500/20 border-gray-400/30 text-gray-400 cursor-not-allowed"
+                : isCallActive 
+                  ? "bg-red-500/20 border-red-400/30 hover:bg-red-500/30 text-red-300"
+                  : isConnecting
+                    ? "bg-yellow-500/20 border-yellow-400/30 text-yellow-300 cursor-not-allowed"
+                    : "border-white/10 bg-white/5 hover:bg-white/10 text-white/70"
             ].join(" ")}
-            title={isCallActive ? "End call" : isConnecting ? "Connecting..." : "Start voice call"}
+            title={
+              !isVapiConfigured 
+                ? "Voice agent not configured - check .env.local" 
+                : isCallActive 
+                  ? "End call" 
+                  : isConnecting 
+                    ? "Connecting..." 
+                    : "Start voice call"
+            }
           >
             {isConnecting ? (
               <Loader2 className="size-5 animate-spin" />
@@ -356,7 +374,12 @@ export default function Chat() {
 
         <p className="mt-2 text-center text-[11px] text-white/40">
           Powered by <span className="text-white/70">Vapi</span>. 
-          {isCallActive ? " Voice call active - speak naturally!" : " Click mic for voice or type below."}
+          {!isVapiConfigured 
+            ? " Voice agent not configured - text chat only." 
+            : isCallActive 
+              ? " Voice call active - speak naturally!" 
+              : " Click mic for voice or type below."
+          }
         </p>
       </div>
     </div>

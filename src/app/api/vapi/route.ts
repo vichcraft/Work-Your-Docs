@@ -20,26 +20,44 @@ export async function POST(req: NextRequest) {
 
     let response: string;
 
-    try {
-      // Check if we have valid API keys (not placeholders)
-      const hasValidKeys = process.env.GOOGLE_API_KEY && 
-                          process.env.PINECONE_API_KEY && 
-                          process.env.PINECONE_INDEX_NAME &&
-                          !process.env.GOOGLE_API_KEY.includes('placeholder') &&
-                          !process.env.PINECONE_API_KEY.includes('placeholder');
+    // Check if we have valid API keys (not placeholders)
+    const hasValidKeys = process.env.GOOGLE_API_KEY && 
+                        process.env.PINECONE_API_KEY && 
+                        process.env.PINECONE_INDEX_NAME &&
+                        !process.env.GOOGLE_API_KEY.includes('placeholder') &&
+                        !process.env.PINECONE_API_KEY.includes('placeholder');
 
-      if (hasValidKeys) {
+    if (hasValidKeys) {
+      try {
         // Generate RAG response using the documentation
         const ragResult = await generateRAGResponse(lastMessage.content);
         response = ragResult.response;
-      } else {
-        // Fallback response when API keys are not configured
-        response = `I understand you're asking about "${lastMessage.content}". However, I need to be configured with valid API keys to access the documentation and provide detailed answers. Please set up your Google Gemini and Pinecone API keys in the .env.local file to enable the RAG (Retrieval-Augmented Generation) system.`;
+      } catch (ragError) {
+        console.error("RAG system error:", ragError);
+        // Fallback response when RAG system fails
+        response = `I understand you're asking about "${lastMessage.content}". I'm having trouble accessing the documentation system right now. Please make sure your API keys are properly configured in the .env.local file.`;
       }
-    } catch (ragError) {
-      console.error("RAG system error:", ragError);
-      // Fallback response when RAG system fails
-      response = `I understand you're asking about "${lastMessage.content}". I'm having trouble accessing the documentation system right now. Please make sure your API keys are properly configured in the .env.local file.`;
+    } else {
+      // Demo response when API keys are not configured - simulate RAG behavior
+      const sampleDocs = [
+        "API Documentation: All API requests require authentication using an API key. Include your API key in the Authorization header: 'Authorization: Bearer YOUR_API_KEY'. The API base URL is: https://api.example.com/v1",
+        "User Manual: Create your account by visiting the registration page. Verify your email address and complete your profile information. Set up two-factor authentication for enhanced security.",
+        "Technical Specs: Our platform is built using React 18 with TypeScript, Node.js 18+, Express.js, PostgreSQL 14+, and Redis 6+. The system uses microservices architecture with AWS cloud infrastructure."
+      ];
+      
+      // Simple keyword matching to simulate RAG behavior
+      const query = lastMessage.content.toLowerCase();
+      let relevantDoc = sampleDocs[0]; // Default
+      
+      if (query.includes('api') || query.includes('authentication') || query.includes('key') || query.includes('endpoint')) {
+        relevantDoc = sampleDocs[0];
+      } else if (query.includes('user') || query.includes('account') || query.includes('registration') || query.includes('profile')) {
+        relevantDoc = sampleDocs[1];
+      } else if (query.includes('technical') || query.includes('system') || query.includes('architecture') || query.includes('infrastructure')) {
+        relevantDoc = sampleDocs[2];
+      }
+      
+      response = `Based on the documentation, here's what I found about "${lastMessage.content}":\n\n${relevantDoc}\n\nNote: This is a demo response using sample documentation. To get real-time answers from your actual documentation, please configure your Google Gemini and Pinecone API keys in the .env.local file.`;
     }
     
     // Stream the response back

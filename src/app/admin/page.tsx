@@ -55,6 +55,8 @@ export default function AdminPage() {
       const data = await res.json();
       if (data.success) {
         setIndexMessage('Documents indexed successfully!');
+      } else if (data.requiresRealKeys) {
+        setIndexMessage(`⚠️ ${data.error}`);
       } else {
         setIndexMessage(`Error: ${data.error}`);
       }

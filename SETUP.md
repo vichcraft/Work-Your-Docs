@@ -23,6 +23,8 @@ GOOGLE_API_KEY=your_google_gemini_api_key_here
 
 # VAPI Configuration
 VAPI_PRIVATE_API_KEY=your_vapi_private_api_key_here
+NEXT_PUBLIC_VAPI_PUBLIC_KEY=your_vapi_public_key_here
+NEXT_PUBLIC_VAPI_ASSISTANT_ID=your_assistant_id_here
 ```
 
 ## Pinecone Index Setup
@@ -47,10 +49,12 @@ VAPI_PRIVATE_API_KEY=your_vapi_private_api_key_here
 3. Create a new API key
 4. Copy the key
 
-### VAPI API Key
+### VAPI API Keys
 1. Log in to [VAPI Dashboard](https://dashboard.vapi.ai)
 2. Go to API Keys section
-3. Copy your private API key
+3. Copy your private API key (for server-side)
+4. Copy your public API key (for client-side voice agent)
+5. (Optional) Create an assistant and copy the assistant ID
 
 ## Sample Documentation
 
