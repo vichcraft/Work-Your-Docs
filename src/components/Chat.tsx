@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Paperclip, Mic, Send, Loader2, Bot, User, Phone, PhoneOff } from "lucide-react";
 import Vapi from "@vapi-ai/web";
+import { v4 as uuidv4 } from "uuid";
 
 type Role = "user" | "assistant" | "system";
 type Message = { id: string; role: Role; content: string; createdAt: number };
@@ -26,7 +27,7 @@ function ts(id?: number) {
 export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: crypto.randomUUID(),
+      id: uuidv4(),
       role: "assistant",
       content:
         "Hi! I'm your assistant powered by Vapi. You can type to me or click the microphone to start a voice conversation!",
@@ -69,7 +70,7 @@ export default function Chat() {
         if (message.type === "transcript" && message.role === "user") {
           // Add user's spoken message to chat
           const userMsg: Message = {
-            id: crypto.randomUUID(),
+            id: uuidv4(),
             role: "user",
             content: message.transcript,
             createdAt: Date.now(),
@@ -78,7 +79,7 @@ export default function Chat() {
         } else if (message.type === "transcript" && message.role === "assistant") {
           // Add assistant's response to chat
           const assistantMsg: Message = {
-            id: crypto.randomUUID(),
+            id: uuidv4(),
             role: "assistant",
             content: message.transcript,
             createdAt: Date.now(),
@@ -113,7 +114,7 @@ export default function Chat() {
     if (!content) return;
 
     const userMsg: Message = {
-      id: crypto.randomUUID(),
+      id: uuidv4(),
       role: "user",
       content,
       createdAt: Date.now(),
@@ -141,7 +142,7 @@ export default function Chat() {
       const decoder = new TextDecoder();
       let acc = "";
 
-      const assistantId = crypto.randomUUID();
+      const assistantId = uuidv4();
       const pushPartial = (partial: string) => {
         setMessages((prev) => {
           const without = prev.filter((m) => m.id !== assistantId);
@@ -167,7 +168,7 @@ export default function Chat() {
       setMessages((m) => [
         ...m,
         {
-          id: crypto.randomUUID(),
+          id: uuidv4(),
           role: "assistant",
           content:
             "Hmm, I couldn’t reach the assistant. Check the `/api/vapi` route and your Vapi configuration.",

@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { generateRAGResponse } from "../../../../backend/lib/rag";
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,9 +18,29 @@ export async function POST(req: NextRequest) {
       return new Response("Invalid message format", { status: 400 });
     }
 
-    // For text-based chat, we'll simulate a response since Vapi is primarily for voice
-    // In a real implementation, you might want to use your own LLM or forward to another service
-    const response = await generateTextResponse(lastMessage.content);
+    let response: string;
+
+    try {
+      // Check if we have valid API keys (not placeholders)
+      const hasValidKeys = process.env.GOOGLE_API_KEY && 
+                          process.env.PINECONE_API_KEY && 
+                          process.env.PINECONE_INDEX_NAME &&
+                          !process.env.GOOGLE_API_KEY.includes('placeholder') &&
+                          !process.env.PINECONE_API_KEY.includes('placeholder');
+
+      if (hasValidKeys) {
+        // Generate RAG response using the documentation
+        const ragResult = await generateRAGResponse(lastMessage.content);
+        response = ragResult.response;
+      } else {
+        // Fallback response when API keys are not configured
+        response = `I understand you're asking about "${lastMessage.content}". However, I need to be configured with valid API keys to access the documentation and provide detailed answers. Please set up your Google Gemini and Pinecone API keys in the .env.local file to enable the RAG (Retrieval-Augmented Generation) system.`;
+      }
+    } catch (ragError) {
+      console.error("RAG system error:", ragError);
+      // Fallback response when RAG system fails
+      response = `I understand you're asking about "${lastMessage.content}". I'm having trouble accessing the documentation system right now. Please make sure your API keys are properly configured in the .env.local file.`;
+    }
     
     // Stream the response back
     const encoder = new TextEncoder();
@@ -50,21 +71,4 @@ export async function POST(req: NextRequest) {
     console.error("Vapi API error:", error);
     return new Response("Internal server error", { status: 500 });
   }
-}
-
-// Helper function to generate text responses
-// In a real app, you might integrate with OpenAI, Anthropic, or other LLM providers
-async function generateTextResponse(_userMessage: string): Promise<string> {
-  // You can integrate with your preferred LLM here
-  // For now, return a helpful response
-  const responses = [
-    "I'm ready to help! What would you like to discuss?",
-    "That's an interesting question. Let me think about that...",
-    "I understand. How can I assist you with that?",
-    "Great point! Here's what I think about that...",
-    "I'm here to help you with whatever you need.",
-  ];
-  
-  return responses[Math.floor(Math.random() * responses.length)] + 
-    " You can also click the microphone button to start a voice conversation with me!";
 }

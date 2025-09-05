@@ -1,0 +1,52 @@
+API Documentation Guide
+
+This document provides comprehensive information about our REST API endpoints and how to use them effectively.
+
+Authentication
+All API requests require authentication using an API key. Include your API key in the Authorization header:
+Authorization: Bearer YOUR_API_KEY
+
+Base URL
+The API base URL is: https://api.example.com/v1
+
+Endpoints
+
+1. Users Endpoint
+GET /users
+- Description: Retrieve a list of all users
+- Parameters:
+  - page (optional): Page number for pagination (default: 1)
+  - limit (optional): Number of users per page (default: 10)
+- Response: Array of user objects
+
+POST /users
+- Description: Create a new user
+- Body: JSON object with user details
+- Required fields: name, email
+- Response: Created user object
+
+2. Products Endpoint
+GET /products
+- Description: Get all products
+- Parameters:
+  - category (optional): Filter by product category
+  - in_stock (optional): Filter by availability (true/false)
+- Response: Array of product objects
+
+GET /products/{id}
+- Description: Get a specific product by ID
+- Response: Product object
+
+Error Handling
+The API uses standard HTTP status codes:
+- 200: Success
+- 400: Bad Request
+- 401: Unauthorized
+- 404: Not Found
+- 500: Internal Server Error
+
+Rate Limiting
+API requests are limited to 1000 requests per hour per API key. Rate limit headers are included in responses:
+- X-RateLimit-Limit: Maximum requests allowed
+- X-RateLimit-Remaining: Requests remaining in current window
+- X-RateLimit-Reset: Time when the rate limit resets
